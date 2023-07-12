@@ -12,6 +12,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+	"bufio"
+	"path/filepath"
 )
 
 // func createNewRepositoryFromFork() {
@@ -140,7 +142,7 @@ func createRepository(token, repoOwner, repoName, repoDescription string, isPriv
 func cloneAndPublishRepository(repoName string) {
 	// Imposta le informazioni del repository sorgente
 	sourceOwner := "attgua"
-	sourceRepo := "Kubernetes"
+	sourceRepo := "HelmChart-lens"
 
 	// Imposta le informazioni del nuovo repository
 	repoOwner := "attgua"
@@ -210,14 +212,65 @@ func cloneAndPublishRepository(repoName string) {
 	}
 	fmt.Println("Repository clonato e pubblicato con successo!")
 
-
-	cmd = exec.Command("cd", "..", ";", "rm", "-rf", repoName)
-	err = cmd.Run()
+	currentPath, err := os.Getwd()
 	if err != nil {
-		fmt.Println("Errore durante l'esecuzione del comando 'pwd':", err)
+		fmt.Println("Errore durante l'ottenimento del percorso della directory corrente:", err)
 		return
 	}
-	fmt.Println("Folder cancellata!")
+
+	// Crea il percorso completo al file "values.yaml" a un livello superiore
+	filePath := filepath.Join(currentPath, "/../values.yaml")
+
+	// Stampa il percorso della directory corrente
+	fmt.Println("Percorso della directory corrente:", filePath)
+
+	cmd_2 := exec.Command("cp", filePath, "./values-really-custom.yaml")
+	err_2 := cmd_2.Run()
+	if err_2 != nil {
+		fmt.Println("Errore durante la copia", err)
+		return
+	}
+
+	cmd_3 := exec.Command("git", "add", ".")
+	err_3 := cmd_3.Run()
+	if err_3 != nil {
+		fmt.Println("Errore durante l'esecuzione del comando 'git add':", err)
+		return
+	}
+
+	// Esegui il comando "git commit" per creare un commit con il file aggiunto
+	cmd = exec.Command("git", "commit", "-m", "Aggiunto file")
+	err = cmd.Run()
+	if err != nil {
+		fmt.Println("Errore durante l'esecuzione del comando 'git commit':", err)
+		return
+	}
+
+	fmt.Println("File aggiunto e commit creato con successo!")
+
+	// Esegui il comando "git push" per pubblicare il repository sul tuo account Git
+	cmd = exec.Command("git", "push", "-u", "origin", "main")
+	err = cmd.Run()
+	if err != nil {
+		fmt.Println("Errore durante l'esecuzione del comando 'git push':", err)
+		return
+	}
+	fmt.Println("Repository clonato e pubblicato con successo!")
+
+	currentPath_2, err := os.Getwd()
+	if err != nil {
+		fmt.Println("Errore durante l'ottenimento del percorso della directory corrente:", err)
+		return
+	}
+
+	// Rimuovi la directory
+	err_new := os.RemoveAll(currentPath_2)
+	if err_new != nil {
+		fmt.Println("Errore durante l'eliminazione della directory:", err)
+		return
+	}
+
+	fmt.Println("Directory eliminata con successo!")
 
 }
 
@@ -229,8 +282,18 @@ func main() {
 	}
 	token := args[1]
 
+	// Crea un nuovo scanner per leggere l'input
+	scanner := bufio.NewScanner(os.Stdin)
+
+	// Chiedi all'utente di inserire un valore
+	fmt.Print("Inserisci il nome del repo da creare: ")
+
+	// Leggi l'input dall'utente
+	scanner.Scan()
+	input := scanner.Text()
+
 	repoOwner := "attgua"
-	repoName := "NOME_REPO_7"
+	repoName := input
 	repoDescription := "DESCRIZIONE_REPO"
 	private := false
 
